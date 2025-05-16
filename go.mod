@@ -1,4 +1,4 @@
-module github.com/gomsr/atom-kit
+module github.com/gomsr/atom-kits
 
 go 1.23.1
 
