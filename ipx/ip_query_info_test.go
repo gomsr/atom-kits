@@ -2,7 +2,7 @@ package ipx
 
 import (
 	"fmt"
-	"github.com/gookit/goutil/fmtutil"
+	"github.com/gookit/goutil/x/fmtutil"
 	"testing"
 )
 
