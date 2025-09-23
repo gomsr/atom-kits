@@ -86,15 +86,22 @@ const (
 	ICloudIsSSL  = false
 )
 
-// DoSend 发送邮件
-func DoSend(to, subject, body, from, nickname, secret string) (err error) {
-	if len(from) == 0 {
-		return errors.New("函数配置的发件人不能为空")
-	}
-	if len(to) == 0 {
-		return errors.New("函数配置的收件人不能为空")
-	}
+var ZohoFunc = func() (string, int, bool) {
+	return "smtp.zoho.com", 587, false
+}
 
+func DoSendTypeFunc(to, subject, body, from, nickname, secret string, defVal func() (string, int, bool)) (err error) {
+	host, port, isSSL := defVal()
+	return RealDoSend(to, subject, body, from, nickname, secret, host, port, isSSL)
+}
+
+func DoSendType(types, to, subject, body, from, nickname, secret string) (err error) {
+	host, port, isSSL := deterServer(types)
+	return RealDoSend(to, subject, body, from, nickname, secret, host, port, isSSL)
+}
+
+// DoSend 发送邮件
+func DoSend(to, subject, body, from, nickname, secret string, defVal ...func() (string, int, bool)) (err error) {
 	// parse host, ssl, port info
 	host, port, isSSL := "", 0, false
 	if strings.HasSuffix(from, GmailSuffix) {
@@ -113,6 +120,21 @@ func DoSend(to, subject, body, from, nickname, secret string) (err error) {
 		host = ICloudHost
 		port = ICloudPort
 		isSSL = ICloudIsSSL
+	} else {
+		if len(defVal) > 0 {
+			host, port, isSSL = defVal[0]()
+		}
+	}
+
+	return RealDoSend(to, subject, body, from, nickname, secret, host, port, isSSL)
+}
+
+func RealDoSend(to, subject, body, from, nickname, secret, host string, port int, isSSL bool) (err error) {
+	if len(from) == 0 {
+		return errors.New("函数配置的发件人不能为空")
+	}
+	if len(to) == 0 {
+		return errors.New("函数配置的收件人不能为空")
 	}
 
 	receivers := strings.Split(to, ",")
@@ -138,6 +160,23 @@ func DoSend(to, subject, body, from, nickname, secret string) (err error) {
 		err = e.Send(hostAddr, auth)
 	}
 	return err
+}
+
+func deterServer(types string) (string, int, bool) {
+	if strings.EqualFold(types, GmailType) {
+		return GmailHost, GmailPort, GmailIsSSL
+	}
+	if strings.EqualFold(types, NetType) {
+		return NetHost, NetPort, NetIsSSL
+	}
+	if strings.EqualFold(types, QqType) {
+		return QqHost, QqPort, QqIsSSL
+	}
+	if strings.EqualFold(types, ICloudType) {
+		return ICloudHost, ICloudPort, ICloudIsSSL
+	}
+
+	return "", 0, false
 }
 
 // isHTML 检查字符串是否包含 HTML 标签

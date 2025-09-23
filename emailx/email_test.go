@@ -14,7 +14,6 @@ var secretICloud string
 func init() {
 	secretQq, _ = jasypt.New().DecryptWrapper("ENC(hlomTQKeIwivZYpT22kVC/oiRnewPAXza2LZo87/0PObwbdYVF/p5+NCb/069aZmP2D/p740TbMTl8W9uslWzg==)")
 	secretNet, _ = jasypt.New().DecryptWrapper("ENC(mPbyo0f3VKO5kBGJaKOggTLbfqXR103iOfQhn548ff+EI1hMrj5q3YffhwMRKNdM)")
-	secretNet, _ = jasypt.New().DecryptWrapper("ENC(mPbyo0f3VKO5kBGJaKOggTLbfqXR103iOfQhn548ff+EI1hMrj5q3YffhwMRKNdM)")
 	secretGmail, _ = jasypt.New().DecryptWrapper("ENC(8YwWbLC7ZwTZZrE76TzTjtBq19M8NVq0AJRjzQ7jYpKQWOMQLxlka0foCqfdKbIN0Yrql8R8WUFaPhpnKg0tuw==)")
 	secretICloud, _ = jasypt.New().DecryptWrapper("ENC(lbg+dgcpGPn/B+OoR4piVQvwiIsHLVG89HKzJl3SfmctrA/4zSu1qcMbjXFkXccVpLvmL3hF6CiizJwgFpZ0yQ==)")
 }
@@ -84,6 +83,14 @@ var register = `
 </body>
 </html>
 `
+
+func TestDoSendFunc(t *testing.T) {
+	err := DoSendTypeFunc("zzhang_xz@163.com", "【注册验证码】WPP 网站注册", register,
+		"support@feturax.com", "feturax", "l&%iTi%Dx)&$!G2R)%Q3YI24", ZohoFunc)
+	if err != nil {
+		panic(err)
+	}
+}
 
 func TestDoSendICloud(t *testing.T) {
 	err := DoSend("zzhang_xz@163.com", "【注册验证码】WPP 网站注册", register,
