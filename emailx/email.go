@@ -78,6 +78,14 @@ const (
 	QqIsSSL  = false
 )
 
+const (
+	ICloudSuffix = "@icloud.com"
+	ICloudType   = "icloud"
+	ICloudHost   = "smtp.mail.me.com"
+	ICloudPort   = 587
+	ICloudIsSSL  = false
+)
+
 // DoSend 发送邮件
 func DoSend(to, subject, body, from, nickname, secret string) (err error) {
 	if len(from) == 0 {
@@ -101,6 +109,10 @@ func DoSend(to, subject, body, from, nickname, secret string) (err error) {
 		host = QqHost
 		port = QqPort
 		isSSL = QqIsSSL
+	} else if strings.HasSuffix(from, ICloudSuffix) {
+		host = ICloudHost
+		port = ICloudPort
+		isSSL = ICloudIsSSL
 	}
 
 	receivers := strings.Split(to, ",")
