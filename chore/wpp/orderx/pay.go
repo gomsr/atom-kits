@@ -12,6 +12,8 @@ const (
 	Wechatpay     = "wechatpay"
 	PayTypePaypal = 3
 	Paypal        = "paypal"
+	PayTypePoint  = 4
+	Point         = "point"
 )
 
 func PayType2Pb(payType string) int64 {
@@ -26,6 +28,9 @@ func PayType2Pb(payType string) int64 {
 	}
 	if strings.EqualFold(payType, Paypal) {
 		return PayTypePaypal
+	}
+	if strings.EqualFold(payType, Point) {
+		return PayTypePoint
 	}
 	return -1
 }
@@ -43,6 +48,9 @@ func PayType2Web(payType int64) string {
 
 	if payType == PayTypePaypal {
 		return Paypal
+	}
+	if payType == PayTypePoint {
+		return Point
 	}
 
 	return ""

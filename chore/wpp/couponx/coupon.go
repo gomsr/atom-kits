@@ -61,6 +61,11 @@ const (
 	CouponUseStatusExpired = 2
 )
 
+const (
+	CouponCreateTypeAdmin  = 1 // admin
+	CouponCreateTypeSystem = 2 // system
+)
+
 func IsLogic(typo, receiveType int64) bool {
 	return CouponTypeKolCode == typo ||
 		(CouponReceiveTypeLogic == typo && receiveType == CouponReceiveTypeLogic)
