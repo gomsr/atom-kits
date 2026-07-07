@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"net/smtp"
-	"regexp"
 	"strings"
 
 	"github.com/jordan-wright/email"
 )
 
+// Deprecated: Use Send instead.
 type Email struct {
 	To       string `mapstructure:"to" json:"to" yaml:"to"`                   // 收件人:多个以英文逗号分隔 例：a@qq.com b@qq.com 正式开发中请把此项目作为参数使用
 	From     string `mapstructure:"from" json:"from" yaml:"from"`             // 发件人  你自己要发邮件的邮箱
@@ -21,11 +21,23 @@ type Email struct {
 	IsSSL    bool   `mapstructure:"is-ssl" json:"is-ssl" yaml:"is-ssl"`       // 是否SSL   是否开启SSL
 }
 
-// Deprecated: DoSend
-// @function: send
-// @description: Email发送方法
-// @param: subject string, body string
-// @return: error
+// Deprecated: Use Send instead.
+// SendEmail is the original email sending method. Prefer Send() from send_attach.go.
+//
+// Migration:
+//
+//	emailx.SendEmail(config, to, subject, body)
+//	→ emailx.Send(emailx.SendConfig{
+//	      From:     config.From,
+//	      Nickname: config.Nickname,
+//	      Secret:   config.Secret,
+//	      To:       to,
+//	      Subject:  subject,
+//	      Body:     body,
+//	      Host:     config.Host,
+//	      Port:     config.Port,
+//	      IsSSL:    config.IsSSL,
+//	  })
 func SendEmail(config Email, to []string, subject string, body string) error {
 	from := config.From
 	nickname := config.Nickname
@@ -54,72 +66,62 @@ func SendEmail(config Email, to []string, subject string, body string) error {
 	return err
 }
 
-const (
-	GmailSuffix = "@gmail.com"
-	GmailType   = "google"
-	GmailHost   = "smtp.gmail.com"
-	GmailPort   = 587
-	GmailIsSSL  = false
-)
-
-const (
-	NetSuffix = "@163.com"
-	NetType   = "163"
-	NetHost   = "smtp.163.com"
-	NetPort   = 465
-	NetIsSSL  = true
-)
-
-const (
-	QqSuffix = "@qq.com"
-	QqType   = "qq"
-	QqHost   = "smtp.qq.com"
-	QqPort   = 587
-	QqIsSSL  = false
-)
-
-const (
-	ICloudSuffix = "@icloud.com"
-	ICloudType   = "icloud"
-	ICloudHost   = "smtp.mail.me.com"
-	ICloudPort   = 587
-	ICloudIsSSL  = false
-)
-
-var ZohoFunc = func() (string, int, bool) {
-	return "smtp.zoho.com", 587, false
-}
-
+// Deprecated: Use Send with WithServerFunc instead.
+//
+// Migration:
+//
+//	emailx.DoSendTypeFunc(to, subject, body, from, nickname, secret, fn)
+//	→ emailx.Send(emailx.SendConfig{
+//	      From:       from,
+//	      Nickname:   nickname,
+//	      Secret:     secret,
+//	      To:         strings.Split(to, ","),
+//	      Subject:    subject,
+//	      Body:       body,
+//	      ServerFunc: fn,
+//	  })
 func DoSendTypeFunc(to, subject, body, from, nickname, secret string, defVal func() (string, int, bool)) (err error) {
 	host, port, isSSL := defVal()
 	return RealDoSend(to, subject, body, from, nickname, secret, host, port, isSSL)
 }
 
+// Deprecated: Use Send instead (auto-detection handles provider types).
+//
+// Migration:
+//
+//	emailx.DoSendType("google", to, subject, body, from, nickname, secret)
+//	→ emailx.Send(from, nickname, secret, strings.Split(to, ","), subject, body)
 func DoSendType(types, to, subject, body, from, nickname, secret string) (err error) {
 	host, port, isSSL := deterServer(types)
 	return RealDoSend(to, subject, body, from, nickname, secret, host, port, isSSL)
 }
 
-// DoSend 发送邮件
+// Deprecated: Use Send instead.
+//
+// Migration:
+//
+//	emailx.DoSend(to, subject, body, from, nickname, secret)
+//	→ emailx.Send(from, nickname, secret, strings.Split(to, ","), subject, body)
+//
+// For custom servers:
+//
+//	emailx.DoSend(to, subject, body, from, nickname, secret, fn)
+//	→ emailx.Send(from, nickname, secret, strings.Split(to, ","), subject, body, emailx.WithServerFunc(fn))
 func DoSend(to, subject, body, from, nickname, secret string, defVal ...func() (string, int, bool)) (err error) {
 	// parse host, ssl, port info
 	host, port, isSSL := "", 0, false
 	if strings.HasSuffix(from, GmailSuffix) {
-		host = GmailHost
-		port = GmailPort
-		isSSL = GmailIsSSL
+		host, port, isSSL = GmailFunc()
+
 	} else if strings.HasSuffix(from, NetSuffix) {
-		host = NetHost
-		port = NetPort
-		isSSL = NetIsSSL
+		host, port, isSSL = NetFunc()
+
 	} else if strings.HasSuffix(from, QqSuffix) {
-		host = QqHost
-		port = QqPort
-		isSSL = QqIsSSL
+		host, port, isSSL = QqFunc()
+
 	} else if strings.HasSuffix(from, ICloudSuffix) {
-		host = ICloudHost
-		port = ICloudPort
-		isSSL = ICloudIsSSL
+		host, port, isSSL = ICloudFunc()
+
 	} else {
 		if len(defVal) > 0 {
 			host, port, isSSL = defVal[0]()
@@ -129,6 +131,12 @@ func DoSend(to, subject, body, from, nickname, secret string, defVal ...func() (
 	return RealDoSend(to, subject, body, from, nickname, secret, host, port, isSSL)
 }
 
+// Deprecated: Use Send with WithServer instead.
+//
+// Migration:
+//
+//	emailx.RealDoSend(to, subject, body, from, nickname, secret, host, port, isSSL)
+//	→ emailx.Send(from, nickname, secret, strings.Split(to, ","), subject, body, emailx.WithServer(host, port, isSSL))
 func RealDoSend(to, subject, body, from, nickname, secret, host string, port int, isSSL bool) (err error) {
 	if len(from) == 0 {
 		return errors.New("函数配置的发件人不能为空")
@@ -164,24 +172,17 @@ func RealDoSend(to, subject, body, from, nickname, secret, host string, port int
 
 func deterServer(types string) (string, int, bool) {
 	if strings.EqualFold(types, GmailType) {
-		return GmailHost, GmailPort, GmailIsSSL
+		return GmailFunc()
 	}
 	if strings.EqualFold(types, NetType) {
-		return NetHost, NetPort, NetIsSSL
+		return NetFunc()
 	}
 	if strings.EqualFold(types, QqType) {
-		return QqHost, QqPort, QqIsSSL
+		return QqFunc()
 	}
 	if strings.EqualFold(types, ICloudType) {
-		return ICloudHost, ICloudPort, ICloudIsSSL
+		return ICloudFunc()
 	}
 
 	return "", 0, false
-}
-
-// isHTML 检查字符串是否包含 HTML 标签
-func isHTML(str string) bool {
-	// 定义一个简单的正则表达式，用于检测 HTML 标签
-	re := regexp.MustCompile(`(?i)<[a-z][\s\S]*>`)
-	return re.MatchString(str)
 }

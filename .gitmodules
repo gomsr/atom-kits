@@ -1,0 +1,4 @@
+[submodule ".claude"]
+	path = .claude
+	url = git@github.com:Alice52/.claude.git
+	branch = master

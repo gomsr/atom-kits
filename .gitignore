@@ -15,6 +15,7 @@
 !*.json
 !*.toml
 !*.sql
+!.claude
 gormx/source/g/dal/*
 gormx/source/g/model/*
 gormx/source/migrations/*
